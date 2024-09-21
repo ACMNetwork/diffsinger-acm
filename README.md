@@ -1,6 +1,5 @@
 # Diffsinger-ACM
-ACM Network「Vsinger小冰」企划所使用的修改版Diffsinger。\
-**本版本不是自由软件，对商业使用有限制**。具体见license.txt。
+ACM Network「Vsinger小冰」企划所使用的修改版Diffsinger。
 
 ---
 
