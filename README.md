@@ -1,3 +1,9 @@
+# Diffsinger-ACM
+ACM Network「Vsinger小冰」企划所使用的修改版Diffsinger。\
+**本版本不是自由软件，对商业使用有限制**。具体见license.txt。
+
+---
+
 # DiffSinger (OpenVPI maintained version)
 
 [![arXiv](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2105.02446)
