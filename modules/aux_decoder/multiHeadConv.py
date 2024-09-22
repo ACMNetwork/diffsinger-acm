@@ -1,49 +1,39 @@
 import torch
 import torch.nn as nn
 
+class convPlugin(nn.Module):
+	def __init__(self,dim):
+		super().__init__()
+		self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
+		self.act = nn.GELU()
+	def forward(self,x: torch.Tensor) -> torch.Tensor:
+		return self.act(self.dwconv(x))
+
 class MultiHeadConv(nn.Module):
 	def __init__(self,dim):
 		super().__init__()
-		self.dwconv1 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv2 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv1q = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv2q = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv3 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv4 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv5 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv6 = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv3q = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv4q = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.dwconv5q = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)
-		self.act1 = nn.GELU()
-		self.act2 = nn.GELU()
-		self.act1q = nn.GELU()
-		self.act2q = nn.GELU()
-		self.act3 = nn.GELU()
-		self.act4 = nn.GELU()
-		self.act5 = nn.GELU()
-		self.act6 = nn.GELU()
 		self.act7 = nn.GELU()
-		self.conv2d = nn.Conv2d(in_channels=7,out_channels=1, kernel_size=7, padding=3)
+		self.conv2d = nn.Conv2d(in_channels=4,out_channels=1, kernel_size=7, padding=3)
+		self.stacking1 = nn.ModuleList(
+			convPlugin(dim) for _ in range(3)
+		)
+		self.stacking2 = nn.ModuleList(
+			convPlugin(dim) for _ in range(4)
+		)
+		self.stacking3 = nn.ModuleList(
+			convPlugin(dim) for _ in range(4)
+		)
 	def forward(self,x: torch.Tensor) -> torch.Tensor:
-		# pre conv
-		x1 = self.dwconv1(x)
-		x2 = self.dwconv2(x)
-		x1q = self.dwconv1q(x)
-		x2q = self.dwconv2q(x)
-		x1 = self.act1(x1)
-		x2 = self.act2(x2)
-		x1q = self.act1(x1q)
-		x2q = self.act2(x2q)
-		# again conv
-		x3 = self.act3(self.dwconv3(x1))
-		x4 = self.act4(self.dwconv4(x2))
-		x5 = self.act5(self.dwconv5(x1 + x2))
-		x6 = self.act6(self.dwconv6(x1 - x2))
-		x3q = self.act3(self.dwconv3q(x1q))
-		x4q = self.act4(self.dwconv4q(x2q))
-		x5q = self.act5(self.dwconv5q(x2q + x6 - x1))
-		stacks = torch.stack((x3,x4,x5,x6,x3q,x4q,x5q), dim=1)  # (B, C, T) -> (B, H, C, T)
+		x1 = x
+		x2 = x
+		x3 = x
+		for conv in self.stacking1:
+			x1 = conv(x1)
+		for conv in self.stacking2:
+			x2 = conv(x2)
+		for conv in self.stacking3:
+			x2 = conv(x2)
+		stacks = torch.stack((x,x1,x2,x3), dim=1)  # (B, C, T) -> (B, H, C, T)
 		stacks = self.conv2d(stacks)
 		stacks.transpose(0, 1) # (B, [1], C, T) -> ([1], B, C, T)
 		selected_tensor = stacks[0] # ([1], B, C, T) -> (B, C, T)
