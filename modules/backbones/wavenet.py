@@ -35,6 +35,14 @@ class ResidualBlock(nn.Module):
         self.residual_channels = residual_channels
         self.dilated_conv = nn.Conv1d(
             residual_channels,
+            residual_channels,
+            kernel_size=3,
+            padding=dilation,
+            dilation=dilation
+        )
+        self.act = nn.PReLU()
+        self.dilated_conv2 = nn.Conv1d(
+            residual_channels,
             2 * residual_channels,
             kernel_size=3,
             padding=dilation,
@@ -49,7 +57,7 @@ class ResidualBlock(nn.Module):
         conditioner = self.conditioner_projection(conditioner)
         y = x + diffusion_step
 
-        y = self.dilated_conv(y) + conditioner
+        y = self.dilated_conv2(self.act(self.dilated_conv(y))) + conditioner
 
         # Using torch.split instead of torch.chunk to avoid using onnx::Slice
         gate, filter = torch.split(y, [self.residual_channels, self.residual_channels], dim=1)
@@ -61,9 +69,8 @@ class ResidualBlock(nn.Module):
         residual, skip = torch.split(y, [self.residual_channels, self.residual_channels], dim=1)
         return (x + residual) / math.sqrt(2.0), skip
 
-
 class WaveNet(nn.Module):
-    def __init__(self, in_dims, n_feats, *, n_layers=20, n_chans=256, n_dilates=4):
+    def __init__(self, in_dims, n_feats, *, n_layers=18, n_chans=256, n_dilates=4):
         super().__init__()
         self.in_dims = in_dims
         self.n_feats = n_feats
