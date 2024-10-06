@@ -33,15 +33,9 @@ class ResidualBlock(nn.Module):
     def __init__(self, encoder_hidden, residual_channels, dilation):
         super().__init__()
         self.residual_channels = residual_channels
-        self.dilated_conv = nn.Conv1d(
-            residual_channels,
-            residual_channels,
-            kernel_size=3,
-            padding=dilation,
-            dilation=dilation
-        )
+        self.proto_conv = nn.Conv1d(residual_channels, residual_channels, kernel_size=7, padding=3, groups=residual_channels)
         self.act = nn.PReLU()
-        self.dilated_conv2 = nn.Conv1d(
+        self.dilated_conv = nn.Conv1d(
             residual_channels,
             2 * residual_channels,
             kernel_size=3,
@@ -57,7 +51,7 @@ class ResidualBlock(nn.Module):
         conditioner = self.conditioner_projection(conditioner)
         y = x + diffusion_step
 
-        y = self.dilated_conv2(self.act(self.dilated_conv(y))) + conditioner
+        y = self.dilated_conv(self.act(self.proto_conv(y))) + conditioner
 
         # Using torch.split instead of torch.chunk to avoid using onnx::Slice
         gate, filter = torch.split(y, [self.residual_channels, self.residual_channels], dim=1)
