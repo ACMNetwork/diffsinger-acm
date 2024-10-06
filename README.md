@@ -1,5 +1,5 @@
-# Diffsinger-ACM
-ACM Network「Vsinger小冰」企划所使用的修改版Diffsinger。
+# Diffsinger (OpenICA Maintained Version)
+OpenICA「Vsinger小冰」企划所使用的修改版Diffsinger。
 
 ---
 
